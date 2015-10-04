@@ -80,9 +80,13 @@ int main()
             cout << "\tEnter \"to\" vertex > ";
             cin >> to;
 
-            // Получить значение веса нового ребра от пользователя
-            cout << "\tEnter a weight > ";
-            cin >> weight;
+            // Если граф взвешенный
+            if(graph.is_weighted())
+            {
+                // Получить значение веса нового ребра от пользователя
+                cout << "\tEnter a weight > ";
+                cin >> weight;
+            }
 
             // Добавить ребро с указанными параметрами
             graph.addEdge(from,to,weight);

@@ -10,7 +10,7 @@
 #include <string>   // Строка - последовательность символов
 #include <vector>   // Вектор - массив, который может изменять свой размер
 #include <set>      // Множество - набор элементов одного типа
-#include <tuple>    // Кортеж - N элементов, рассматриваемых вместе
+#include <map>      // Отображение - набор элементов "ключ-значение"
 
 // Сделать все функции и объекты стандартной библиотеки "видимыми" в текущем коде
 using namespace std;
@@ -46,6 +46,9 @@ public:
     void transformToAdjMatrix();    // ... матрицу смежности
     void transformToListOfEdges();  // ... список ребер
 
+    // Возвращает флаг взвешенности графа
+    bool is_weighted();
+
 // Закрытая (приватная) часть класса
 // Эти функции и данные доступны только внутри класса Graph
 private:
@@ -57,8 +60,8 @@ private:
     bool weighted;  // Флаг, true, если граф взвешенный, иначе false
     bool oriented;  // Флаг, true, если граф ориентированный, иначе false
 
-    vector< vector< int > > adjMatrix;                  // Матрица смежности
-    vector< set< tuple< int, int, int > > > adjList;    // Список смежности
+    vector< vector< int > > adjMatrix;            // Матрица смежности
+    map< int, set< pair<int, int> > > adjList;    // Список смежности
 };
 
 #endif // GRAPH_H
