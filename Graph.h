@@ -11,6 +11,7 @@
 #include <vector>   // Вектор - массив, который может изменять свой размер
 #include <set>      // Множество - набор элементов одного типа
 #include <map>      // Отображение - набор элементов "ключ-значение"
+#include <tuple>    // Кортеж - N элементов, рассматриваемых как единое целое
 
 // Сделать все функции и объекты стандартной библиотеки "видимыми" в текущем коде
 using namespace std;
@@ -61,7 +62,8 @@ private:
     bool oriented;  // Флаг, true, если граф ориентированный, иначе false
 
     vector< vector< int > > adjMatrix;            // Матрица смежности
-    map< int, set< pair<int, int> > > adjList;    // Список смежности
+    map< int, set< pair< int, int > > > adjList;  // Список смежности
+    set< tuple< int, int, int > > edgList;        // Список ребер
 };
 
 #endif // GRAPH_H

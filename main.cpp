@@ -30,6 +30,9 @@ int main()
         cout << "[3] Add an edge\n";
         cout << "[4] Change an edge\n";
         cout << "[5] Remove an edge\n";
+        cout << "[6] Transform to adjacency list\n";
+        cout << "[7] Transform to adjacency matrix\n";
+        cout << "[8] Transform to edge list\n";
         cout << "[0] Exit\n";
 
         // Получить выбор пользователя
@@ -117,7 +120,7 @@ int main()
             oldWeight = graph.changeEdge(from,to,newWeight);
 
             // Напечатать прежнее значение веса
-            cout << "\tThe previous value of weight was " << oldWeight << "\n";
+            cout << "\tThe previous weight of " << from << "-" << to << " edge was " << oldWeight << "\n";
         }
         else if(choice == '5')
         {
@@ -137,6 +140,18 @@ int main()
 
             // Удалить указанное ребро
             graph.removeEdge(from, to);
+        }
+        else if(choice == '6')
+        {
+            graph.transformToAdjList();
+        }
+        else if(choice == '7')
+        {
+            graph.transformToAdjMatrix();
+        }
+        else if(choice == '8')
+        {
+            graph.transformToListOfEdges();
         }
     } while(choice != '0');
 

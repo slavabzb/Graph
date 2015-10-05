@@ -73,6 +73,34 @@ b) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход в обе стороны),
 c) Ребро 0-1 и ребро 0-2 (проход строго в указанном направлении),
 d) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход строго в указанном направлении).
 
+
+
+3. Список ребер
+
+a)      b)      c)      d)
+
+E 3 2   E 3 2   E 3 2   E 3 2
+0 0     0 1     1 0     1 1
+0 1     0 1 2   1 0     0 1 2
+0 2     0 2 5   0 2     2 0 5
+
+Эти примеры описывают графы, представленные в виде списка ребер
+(символ 'E' в первой строке), которые имеют 3 вершины (второе число в первой строке).
+
+Вторая строка определяет параметры ориентированности и взвешенности.
+
+a) Неориентированный невзвешенный,
+b) Неориентированный взвешенный (после номеров вершин (концов ребра) стоит вес ребера),
+c) Ориентированный невзвешенный (обход такого графа возможен только в указанном направлении),
+d) Ориентированный взвешенный.
+
+Графы имеют по 2 ребра.
+
+a) Ребро 0-1 и ребро 0-2 (проход в обе стороны),
+b) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход в обе стороны),
+c) Ребро 1-0 и ребро 0-2 (проход строго в указанном направлении),
+d) Ребро 0-1 с весом 2 и ребро 2-0 с весом 5 (проход строго в указанном направлении).
+
 */
 void Graph::readGraph(string fileName)
 {
@@ -189,12 +217,90 @@ void Graph::readGraph(string fileName)
             adjList[from] = row;
         }
     }
+    else    // Если в файле описан граф, представленный в виде списка ребер
+    if(type == 'E')
+    {
+        // Очистить текущее содержимое списка ребер
+        edgList.clear();
+
+        // Считать количество вершин
+        int N = 0;
+        file >> N;
+
+        // Считать количество ребер
+        int M = 0;
+        file >> M;
+
+        // Считать индикатор ориентированности графа
+        file >> oriented;
+
+        // Считать индикатор взвешенности графа
+        file >> weighted;
+
+        // Установить курсор чтения файла на новую строку
+        file.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        // Считать M ребер
+        for(int i = 0; i < M; i++)
+        {
+            // Строка для хранения текущего ребра
+            string rowStr;
+
+            // Считать текущую строку
+            getline(file, rowStr);
+
+            // Строковый поток ввода (для разбиения row по отдельным числам)
+            istringstream iss(rowStr);
+
+            // Переменная для хранения текущего ребра
+            tuple<int, int, int> row;
+
+            // Бежать по rowStr
+            do
+            {
+                // Считать начало ребра
+                int from = 0;
+                iss >> from;
+
+                // Считать конец ребра
+                int to = 0;
+                iss >> to;
+
+                // Переменная для хранения веса ребра
+                int weight = 0;
+
+                // Если описан взвешенный граф
+                if(weighted)
+                {
+                    // Считать вес ребра
+                    iss >> weight;
+                }
+
+                // Сохранить считанные связи в список связей
+                get<0>(row) = from;
+                get<1>(row) = to;
+                get<2>(row) = weight;
+
+            } while (!iss.eof());
+
+            // Добавить ребро в список ребер
+            edgList.insert(row);
+        }
+    }
+    else    // Если в файле что-то иное
+    {
+        // Сообщить об ошибке
+        cout << "Can't recognize type of graph representation\n";
+        return;
+    }
 
     cout << "done\n";
 
     // Напечатать граф
     printGraph();
 }
+
+
 
 void Graph::addEdge(int from, int to, int weight)
 {
@@ -291,12 +397,82 @@ void Graph::addEdge(int from, int to, int weight)
             }
         }
     }
+    else    // Если текущее представление - спискок ребер
+    if(type == 'E')
+    {
+        // Итератор множества - указывает на ребро в списке ребер
+        set< tuple<int, int, int> >::iterator itForward = edgList.end();
+        set< tuple<int, int, int> >::iterator itBackward = edgList.end();
+
+        // Проверить, существует ли добавляемое ребро
+        if(oriented)
+        {
+            if(weighted)
+            {
+                itForward = edgList.find(make_tuple(from,to,weight));
+            }
+            else
+            {
+                itForward = edgList.find(make_tuple(from,to,0));
+            }
+        }
+        else
+        {
+            if(weighted)
+            {
+                itBackward = edgList.find(make_tuple(to,from,weight));
+            }
+            else
+            {
+                itBackward = edgList.find(make_tuple(to,from,0));
+            }
+        }
+
+        // Если что-то нашли
+        if(itForward != edgList.end() || itBackward != edgList.end())
+        {
+            // Сообщить об ошибке
+            cout << "\nCan't add edge from " << from << " to " << to << ", the edge already exists\n";
+            return;
+        }
+
+        // Добавить требуемое ребро
+        if(weighted)
+        {
+            edgList.insert(make_tuple(from,to,weight));
+        }
+        else
+        {
+            edgList.insert(make_tuple(from,to,0));
+        }
+
+        // Если граф неориентированный, добавить также ребро в обратном направлении
+        if(!oriented)
+        {
+            if(weighted)
+            {
+                edgList.insert(make_tuple(to,from,weight));
+            }
+            else
+            {
+                edgList.insert(make_tuple(to,from,0));
+            }
+        }
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return;
+    }
 
     cout << "done\n";
 
     // Напечатать граф
     printGraph();
 }
+
+
 
 void Graph::removeEdge(int from, int to)
 {
@@ -342,6 +518,7 @@ void Graph::removeEdge(int from, int to)
             [&to](const pair<int, int>& edge)
             {
                 if(edge.first==to) return true;
+                return false;
             });
 
         // Если удалось что-то найти
@@ -369,6 +546,7 @@ void Graph::removeEdge(int from, int to)
                 [&from](const pair<int, int>& edge)
                 {
                     if(edge.first==from) return true;
+                    return false;
                 });
 
             // Если не удалось ничего найти
@@ -383,6 +561,55 @@ void Graph::removeEdge(int from, int to)
             fromIt->second.erase(toIt);
         }
     }
+    else    // Если текущее представление - спискок ребер
+    if(type == 'E')
+    {
+        // Итератор множества - указывает на ребро в списке ребер
+        set< tuple<int, int, int> >::iterator itForward = edgList.end();
+        set< tuple<int, int, int> >::iterator itBackward = edgList.end();
+
+        // Проверить, существует ли удаляемое ребро
+        itForward = find_if(edgList.begin(), edgList.end(),
+        [&from, &to](const tuple<int, int, int>& edge){
+            if(get<0>(edge) == from && get<1>(edge) == to) return true;
+            return false;
+        });
+
+        // Для неориентированного проверить также ребро в обратном направлении
+        if(!oriented)
+        {
+            itBackward = find_if(edgList.begin(), edgList.end(),
+            [&from, &to](const tuple<int, int, int>& edge){
+                if(get<0>(edge) == to && get<1>(edge) == from) return true;
+                return false;
+            });
+        }
+
+        // Если что-то нашли, то удалить требуемое ребро
+        if(itForward != edgList.end())
+        {
+            edgList.erase(itForward);
+        }
+
+        if(itBackward != edgList.end())
+        {
+            edgList.erase(itBackward);
+        }
+
+        // Если совсем ничего нет
+        if(itForward == edgList.end() && itBackward == edgList.end())
+        {
+            // Сообщить об ошибке
+            cout << "\nCan't remove edge from " << to << " to " << from << ", the edge doesn't exists\n";
+            return;
+        }
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return;
+    }
 
     cout << "done\n";
 
@@ -390,9 +617,19 @@ void Graph::removeEdge(int from, int to)
     printGraph();
 }
 
+
+
 int Graph::changeEdge(int from, int to, int newWeight)
 {
     cout << "Changing edge from " << from << " to " << to << ", new weight is " << newWeight << "...\t";
+
+    // Если граф невзвешенный
+    if(!weighted)
+    {
+        // Сообщить об ошибке (у ребер нет весов, модифицировать нечего)
+        cout << "\tSorry, you can't modify an edge weight of non-weighted graph\n";
+        return -1;
+    }
 
     int oldWeight = 0;
 
@@ -432,6 +669,8 @@ int Graph::changeEdge(int from, int to, int newWeight)
             return -1;
         }
 
+        fromIt->second.insert(make_pair(1,2));
+
         // Итератор множества - указывает на соседние вершины в списке связей множества
         set< pair<int, int> >::iterator toIt;
 
@@ -440,10 +679,11 @@ int Graph::changeEdge(int from, int to, int newWeight)
             [&to](const pair<int, int>& edge)
             {
                 if(edge.first==to) return true;
+                return false;
             });
 
         // Если не удалось ничего найти
-        if(toIt!=fromIt->second.end())
+        if(toIt==fromIt->second.end())
         {
             // Сообщить об ошибке
             cout << "\nCan't change edge from " << from << " to " << to << ", the edge doesn't' exists\n";
@@ -453,17 +693,11 @@ int Graph::changeEdge(int from, int to, int newWeight)
         // Сохранить прежнее значение веса
         oldWeight = toIt->second;
 
-        // Если граф взвешенный
-        if(weighted)
-        {
-            // Назначить ребру указанный вес
-            toIt->second = newWeight;
-        }
-        else    // Если граф невзвешенный
-        {
-            // Назначить ребру вес 0
-            toIt->second = 0;
-        }
+        // Назначить ребру указанный вес
+        pair<int, int> copy = *toIt;
+        copy.second = newWeight;
+        fromIt->second.erase(toIt);
+        fromIt->second.insert(copy);
 
         // Если граф неориентированный, то изменить также ребро в обратном направлении
         if(!oriented)
@@ -483,6 +717,7 @@ int Graph::changeEdge(int from, int to, int newWeight)
                 [&from](const pair<int, int>& edge)
                 {
                     if(edge.first==from) return true;
+                    return false;
                 });
 
             // Если не удалось ничего найти
@@ -493,18 +728,69 @@ int Graph::changeEdge(int from, int to, int newWeight)
                 return -1;
             }
 
-            // Если граф взвешенный
-            if(weighted)
-            {
-                // Назначить ребру указанный вес
-                toIt->second = newWeight;
-            }
-            else    // Если граф невзвешенный
-            {
-                // Назначить ребру вес 0
-                toIt->second = 0;
-            }
+            // Назначить ребру указанный вес
+            pair<int, int> copy = *toIt;
+            copy.second = newWeight;
+            fromIt->second.erase(toIt);
+            fromIt->second.insert(copy);
         }
+    }
+    else    // Если текущее представление - спискок ребер
+    if(type == 'E')
+    {
+        // Итератор множества - указывает на ребро в списке ребер
+        set< tuple<int, int, int> >::iterator itForward = edgList.end();
+        set< tuple<int, int, int> >::iterator itBackward = edgList.end();
+
+        // Проверить, существует ли изменяемое ребро
+        itForward = find_if(edgList.begin(), edgList.end(),
+        [&from, &to](const tuple<int, int, int>& edge){
+            if(get<0>(edge) == from && get<1>(edge) == to) return true;
+            return false;
+        });
+
+        // Для неориентированного проверить также ребро в обратном направлении
+        if(!oriented)
+        {
+            itBackward = find_if(edgList.begin(), edgList.end(),
+            [&from, &to](const tuple<int, int, int>& edge){
+                if(get<0>(edge) == to && get<1>(edge) == from) return true;
+                return false;
+            });
+        }
+
+        // Если что-то нашли, то изменить требуемое ребро
+        if(itForward != edgList.end())
+        {
+            tuple<int, int, int> copy = *itForward;
+            oldWeight = get<2>(copy);
+            get<2>(copy) = newWeight;
+            edgList.erase(itForward);
+            edgList.insert(copy);
+        }
+
+        if(itBackward != edgList.end())
+        {
+            tuple<int, int, int> copy = *itBackward;
+            oldWeight = get<2>(copy);
+            get<2>(copy) = newWeight;
+            edgList.erase(itBackward);
+            edgList.insert(copy);
+        }
+
+        // Если совсем ничего нет
+        if(itForward == edgList.end() && itBackward == edgList.end())
+        {
+            // Сообщить об ошибке
+            cout << "\nCan't change edge from " << to << " to " << from << ", the edge doesn't exists\n";
+            return -1;
+        }
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return -1;
     }
 
     cout << "done\n";
@@ -516,25 +802,187 @@ int Graph::changeEdge(int from, int to, int newWeight)
     return oldWeight;
 }
 
+
+
 void Graph::transformToAdjList()
 {
+    cout << "Transforming graph from ";
 
+    // Конвертировать в зависимости от типа
+    if(type == 'C')
+    {
+        cout << " adjacency matrix to adjcency list...\t";
+
+        adjList.clear();
+
+        for(size_t i=0; i<adjMatrix.size()-1; i++)
+        {
+            for(size_t j=i+1; j<adjMatrix[i].size(); j++)
+            {
+                if(adjMatrix[i][j] != 0)
+                {
+                    adjList[i].insert(make_pair(j,adjMatrix[i][j]));
+                }
+            }
+        }
+
+        adjMatrix.clear();
+    }
+    else if(type == 'L')
+    {
+        return;
+    }
+    else if(type == 'E')
+    {
+        cout << " edge list to adjcency list...\t";
+
+        adjList.clear();
+
+        for(set< tuple<int, int, int> >::iterator it = edgList.begin(); it != edgList.end(); it++)
+        {
+            adjList[get<0>(*it)].insert(make_pair(get<1>(*it), get<2>(*it)));
+        }
+
+        edgList.clear();
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return;
+    }
+
+    type = 'L';
+
+    cout << "done\n";
+
+    printGraph();
 }
+
+
 
 void Graph::transformToAdjMatrix()
 {
+    cout << "Transforming graph from ";
 
+    // Конвертировать в зависимости от типа
+    if(type == 'C')
+    {
+        return;
+    }
+    else if(type == 'L')
+    {
+        cout << " adjacency list to adjcency matrix...\t";
+
+        adjMatrix.clear();
+        adjMatrix.resize(adjList.size(), vector<int>(adjList.size(), 0));
+
+        for(map< int, set< pair< int, int > > >::iterator i = adjList.begin(); i != adjList.end(); i++)
+        {
+            for(set< pair< int, int > >::iterator j = i->second.begin(); j != i->second.end(); j++)
+            {
+                adjMatrix[i->first][j->first] = j->second;
+            }
+        }
+
+        adjList.clear();
+    }
+    else if(type == 'E')
+    {
+        cout << " edge list to adjcency matrix...\t";
+
+        adjMatrix.clear();
+        adjMatrix.resize(edgList.size(), vector<int>(edgList.size(), 0));
+
+        for(set< tuple< int, int, int > >::iterator it = edgList.begin(); it != edgList.end(); it++)
+        {
+            adjMatrix[get<0>(*it)][get<1>(*it)] = get<2>(*it);
+        }
+
+        edgList.clear();
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return;
+    }
+
+    type = 'C';
+
+    cout << "done\n";
+
+    printGraph();
 }
+
+
 
 void Graph::transformToListOfEdges()
 {
+    cout << "Transforming graph from ";
 
+    // Конвертировать в зависимости от типа
+    if(type == 'C')
+    {
+        cout << " adjacency matrix to edge list...\t";
+
+        edgList.clear();
+
+        for(int i=0; i<adjMatrix.size(); i++)
+        {
+            for(int j=0; j<adjMatrix[i].size(); j++)
+            {
+                if(adjMatrix[i][j] != 0)
+                {
+                    edgList.insert(make_tuple(i,j,adjMatrix[i][j]));
+                }
+            }
+        }
+
+        adjMatrix.clear();
+    }
+    else if(type == 'L')
+    {
+        cout << " adjacency list to edge list...\t";
+
+        edgList.clear();
+
+        for(map< int, set< pair< int, int > > >::iterator i = adjList.begin(); i != adjList.end(); i++)
+        {
+            for(set< pair< int, int > >::iterator j = i->second.begin(); j != i->second.end(); j++)
+            {
+                edgList.insert(make_tuple(i->first, j->first, j->second));
+            }
+        }
+
+        adjList.clear();
+    }
+    else if(type == 'E')
+    {
+        return;
+    }
+    else    // Если другой тип
+    {
+        // Сообщить об ошибке
+        cout << "\nCan't recognize type of graph representation\n";
+        return;
+    }
+
+    type = 'E';
+
+    cout << "done\n";
+
+    printGraph();
 }
+
+
 
 bool Graph::is_weighted()
 {
     return weighted;
 }
+
+
 
 void Graph::printGraph()
 {
@@ -604,8 +1052,39 @@ void Graph::printGraph()
             cout << "\n";
         }
     }
+    else    // Если в файле описан граф, представленный в виде списка ребер
+    if(type == 'E')
+    {
+        cout << "edge list)...\t\n";
 
+        // Бежать по строкам
+        for(set< tuple<int, int, int> >::iterator it=edgList.begin(); it!=edgList.end(); it++)
+        {
+            // Напечатать начало текущего ребра
+            cout << get<0>(*it) << " ";
+
+            // Напечатать конец текущего ребра
+            cout << get<1>(*it);
+
+            // Если граф взвешенный
+            if(weighted)
+            {
+                // Напечатать вес текущего ребра
+                cout << " " << get<2>(*it);
+            }
+
+            cout << "\n";
+        }
+    }
+    else    // Если в файле что-то иное
+    {
+        // Сообщить об ошибке
+        cout << "Can't recognize type of graph representation\n";
+        return;
+    }
 }
+
+
 
 void Graph::writeGraph(string fileName)
 {
@@ -624,12 +1103,12 @@ void Graph::writeGraph(string fileName)
     // Сохранить тип текущего представления
     file << type << " ";
 
+    // Сохранить количество вершин
+    file << adjMatrix.size() << " ";
+
     // Если текущее представление - матрица смежности
     if(type == 'C')
     {
-        // Сохранить количество вершин
-        file << adjMatrix.size() << " ";
-
         // Сохранить флаг взвешенности
         file << weighted << "\n";
 
@@ -648,9 +1127,6 @@ void Graph::writeGraph(string fileName)
     else    // Если текущее представление - список смежности
     if(type == 'L')
     {
-        // Сохранить количество вершин
-        file << adjList.size() << "\n";
-
         // Сохранить флаг ориентированности графа
         file << oriented << " ";
 
@@ -678,6 +1154,43 @@ void Graph::writeGraph(string fileName)
 
             file << "\n";
         }
+    }
+    else    // Если текущее представление - список ребер
+    if(type == 'E')
+    {
+        // Сохранить количество ребер
+        file << edgList.size() << "\n";
+
+        // Сохранить флаг ориентированности графа
+        file << oriented << " ";
+
+        // Сохранить флаг взвешенности графа
+        file << weighted << "\n";
+
+        // Бежать по строкам
+        for(set< tuple<int, int, int> >::iterator it=edgList.begin(); it!=edgList.end(); it++)
+        {
+            // Сохранить начало текущего ребра
+            file << get<0>(*it) << " ";
+
+            // Сохранить конец текущего ребра
+            file << get<1>(*it);
+
+            // Если граф взвешенный
+            if(weighted)
+            {
+                // Сохранить вес текущего ребра
+                file << " " << get<2>(*it);
+            }
+
+            file << "\n";
+        }
+    }
+    else    // Если в файле что-то иное
+    {
+        // Сообщить об ошибке
+        cout << "Can't recognize type of graph representation\n";
+        return;
     }
 
     cout << "done\n";
