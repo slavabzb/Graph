@@ -329,27 +329,21 @@ void Graph::addEdge(int from, int to, int weight)
         set< tuple<int, int, int> >::iterator itBackward = edgList.end();
 
         // Проверить, существует ли добавляемое ребро
-        if(oriented)
+        itForward = find_if(edgList.begin(), edgList.end(),
+            [from](const tuple<int, int, int>& edge)
+            {
+                if(get<0>(edge)==from) return true;
+                return false;
+            });
+
+        if(!oriented)
         {
-            if(weighted)
-            {
-                itForward = edgList.find(make_tuple(from,to,weight));
-            }
-            else
-            {
-                itForward = edgList.find(make_tuple(from,to,0));
-            }
-        }
-        else
-        {
-            if(weighted)
-            {
-                itBackward = edgList.find(make_tuple(to,from,weight));
-            }
-            else
-            {
-                itBackward = edgList.find(make_tuple(to,from,0));
-            }
+            itBackward = find_if(edgList.begin(), edgList.end(),
+                [to](const tuple<int, int, int>& edge)
+                {
+                    if(get<0>(edge)==to) return true;
+                    return false;
+                });
         }
 
         // Если что-то нашли
@@ -368,19 +362,6 @@ void Graph::addEdge(int from, int to, int weight)
         else
         {
             edgList.insert(make_tuple(from,to,0));
-        }
-
-        // Если граф неориентированный, добавить также ребро в обратном направлении
-        if(!oriented)
-        {
-            if(weighted)
-            {
-                edgList.insert(make_tuple(to,from,weight));
-            }
-            else
-            {
-                edgList.insert(make_tuple(to,from,0));
-            }
         }
     }
     else    // Если другой тип
@@ -490,7 +471,6 @@ void Graph::removeEdge(int from, int to)
     {
         // Итератор множества - указывает на ребро в списке ребер
         set< tuple<int, int, int> >::iterator itForward = edgList.end();
-        set< tuple<int, int, int> >::iterator itBackward = edgList.end();
 
         // Проверить, существует ли удаляемое ребро
         itForward = find_if(edgList.begin(), edgList.end(),
@@ -499,29 +479,14 @@ void Graph::removeEdge(int from, int to)
             return false;
         });
 
-        // Для неориентированного проверить также ребро в обратном направлении
-        if(!oriented)
-        {
-            itBackward = find_if(edgList.begin(), edgList.end(),
-            [&from, &to](const tuple<int, int, int>& edge){
-                if(get<0>(edge) == to && get<1>(edge) == from) return true;
-                return false;
-            });
-        }
-
         // Если что-то нашли, то удалить требуемое ребро
         if(itForward != edgList.end())
         {
             edgList.erase(itForward);
         }
 
-        if(itBackward != edgList.end())
-        {
-            edgList.erase(itBackward);
-        }
-
         // Если совсем ничего нет
-        if(itForward == edgList.end() && itBackward == edgList.end())
+        if(itForward == edgList.end())
         {
             // Сообщить об ошибке
             cout << "\nCan't remove edge from " << to << " to " << from << ", the edge doesn't exists\n";
