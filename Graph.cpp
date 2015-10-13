@@ -17,90 +17,13 @@ Graph::Graph()
     type = ' ';
     weighted = false;
     oriented = false;
+    N = 0;
+    M = 0;
 }
 
 /*
-
 Функция чтения графа из файла.
 Во всех представлениях вершины нумеруются с 0.
-
-Файл имеет одну из следующих структур.
-
-
-
-1. Матрица смежности
-
-C 3 1
-0 2 5
-2 0 0
-5 0 0
-
-Этот пример описывает взвешенный граф (последнее число в первой строке - 1;
-если 0, то граф невзвешенный), представленный в виде матрицы смежности
-(символ 'C' в первой строке), который имеет 3 вершины
-(второе число в первой строке).
-
-Граф имеет 2 ребра:
-* ребро с весом 2 между вершинами 0 и 1;
-* ребро с весом 5 между вершинами 0 и 2.
-
-
-
-2. Список смежности
-
-a)      b)          c)      d)
-
-L 3     L 3         L 3     L 3
-0 0     0 1         1 0     1 1
-1 2     1 2 2 5     1 2     1 2 2 5
-0       0 2                 0
-0       0 5                 0
-
-Эти примеры описывают графы, представленные в виде списка смежности
-(символ 'L' в первой строке), которые имеют 3 вершины (второе число в первой строке).
-
-Вторая строка определяет параметры ориентированности и взвешенности.
-
-a) Неориентированный невзвешенный,
-b) Неориентированный взвешенный (после номеров вершин стоят веса ребер),
-c) Ориентированный невзвешенный (обход такого графа возможен только в указанном направлении),
-d) Ориентированный взвешенный.
-
-Графы имеют по 2 ребра.
-
-a) Ребро 0-1 и ребро 0-2 (проход в обе стороны),
-b) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход в обе стороны),
-c) Ребро 0-1 и ребро 0-2 (проход строго в указанном направлении),
-d) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход строго в указанном направлении).
-
-
-
-3. Список ребер
-
-a)      b)      c)      d)
-
-E 3 2   E 3 2   E 3 2   E 3 2
-0 0     0 1     1 0     1 1
-0 1     0 1 2   1 0     0 1 2
-0 2     0 2 5   0 2     2 0 5
-
-Эти примеры описывают графы, представленные в виде списка ребер
-(символ 'E' в первой строке), которые имеют 3 вершины (второе число в первой строке).
-
-Вторая строка определяет параметры ориентированности и взвешенности.
-
-a) Неориентированный невзвешенный,
-b) Неориентированный взвешенный (после номеров вершин (концов ребра) стоит вес ребера),
-c) Ориентированный невзвешенный (обход такого графа возможен только в указанном направлении),
-d) Ориентированный взвешенный.
-
-Графы имеют по 2 ребра.
-
-a) Ребро 0-1 и ребро 0-2 (проход в обе стороны),
-b) Ребро 0-1 с весом 2 и ребро 0-2 с весом 5 (проход в обе стороны),
-c) Ребро 1-0 и ребро 0-2 (проход строго в указанном направлении),
-d) Ребро 0-1 с весом 2 и ребро 2-0 с весом 5 (проход строго в указанном направлении).
-
 */
 void Graph::readGraph(string fileName)
 {
@@ -126,8 +49,10 @@ void Graph::readGraph(string fileName)
         adjMatrix.clear();
 
         // Считать количество вершин
-        int N = 0;
         file >> N;
+
+        // Считать индикатор ориентированности графа
+        file >> oriented;
 
         // Считать индикатор взвешенности графа
         file >> weighted;
@@ -162,7 +87,6 @@ void Graph::readGraph(string fileName)
         adjList.clear();
 
         // Считать количество вершин
-        int N = 0;
         file >> N;
 
         // Считать индикатор ориентированности графа
@@ -190,13 +114,13 @@ void Graph::readGraph(string fileName)
             set< pair<int, int> > row;
 
             // Бежать по rowStr
-            do
+            while (!iss.eof() && !iss.str().empty())
             {
                 // Переменная для хранения номера соседней вершины
                 int to = 0;
 
                 // Считать соседнюю вершину
-                iss >> to;
+                iss >> ws >> to;
 
                 // Переменная для хранения веса ребра
                 int weight = 0;
@@ -205,13 +129,15 @@ void Graph::readGraph(string fileName)
                 if(weighted)
                 {
                     // Считать вес ребра
-                    iss >> weight;
+                    iss >> ws >> weight;
                 }
 
                 // Сохранить считанные связи в список связей
                 row.insert(make_pair(to, weight));
 
-            } while (!iss.eof());
+                // Игнорировать оставшиеся символы в строке
+                iss.ignore(128);
+            };
 
             // Добавить список связей считанной вершины в список смежности
             adjList[from] = row;
@@ -224,11 +150,9 @@ void Graph::readGraph(string fileName)
         edgList.clear();
 
         // Считать количество вершин
-        int N = 0;
         file >> N;
 
         // Считать количество ребер
-        int M = 0;
         file >> M;
 
         // Считать индикатор ориентированности графа
@@ -256,7 +180,7 @@ void Graph::readGraph(string fileName)
             tuple<int, int, int> row;
 
             // Бежать по rowStr
-            do
+            while (!iss.eof() && !rowStr.empty())
             {
                 // Считать начало ребра
                 int from = 0;
@@ -281,7 +205,7 @@ void Graph::readGraph(string fileName)
                 get<1>(row) = to;
                 get<2>(row) = weight;
 
-            } while (!iss.eof());
+            }
 
             // Добавить ребро в список ребер
             edgList.insert(row);
@@ -466,6 +390,9 @@ void Graph::addEdge(int from, int to, int weight)
         return;
     }
 
+    // Увеличить счетчик ребер
+    M++;
+
     cout << "done\n";
 
     // Напечатать граф
@@ -500,32 +427,29 @@ void Graph::removeEdge(int from, int to)
         // Итератор отображения - указывает на список связей вершины в списке смежности
         map< int, set< pair<int, int> > >::iterator fromIt;
 
-        // Найти в списке смежности начало ребра
-        fromIt = adjList.find(from);
-
-        // Если не найдено
-        if(fromIt==adjList.end())
-        {
-            // Вершина не существует, удалять нечего
-            return;
-        }
-
         // Итератор множества - указывает на соседние вершины в списке связей множества
         set< pair<int, int> >::iterator toIt;
 
-        // Найти среди соседей вершину, являющуюся концом ребра, которое необходимо удалить
-        toIt = find_if(fromIt->second.begin(), fromIt->second.end(),
-            [&to](const pair<int, int>& edge)
-            {
-                if(edge.first==to) return true;
-                return false;
-            });
+        // Найти в списке смежности начало ребра
+        fromIt = adjList.find(from);
 
-        // Если удалось что-то найти
-        if(toIt==fromIt->second.end())
-        {
-            // Удалить требуемое ребро
-            fromIt->second.erase(toIt);
+        // Если найдено
+        if(fromIt!=adjList.end())
+        {            
+            // Найти среди соседей вершину, являющуюся концом ребра, которое необходимо удалить
+            toIt = find_if(fromIt->second.begin(), fromIt->second.end(),
+                [&to](const pair<int, int>& edge)
+                {
+                    if(edge.first==to) return true;
+                    return false;
+                });
+
+            // Если удалось что-то найти
+            if(toIt!=fromIt->second.end())
+            {
+                // Удалить требуемое ребро
+                fromIt->second.erase(toIt);
+            }
         }
 
         // Если граф неориентированный, то удалить также ребро в обратном направлении
@@ -610,6 +534,9 @@ void Graph::removeEdge(int from, int to)
         cout << "\nCan't recognize type of graph representation\n";
         return;
     }
+
+    // Уменьшить счетчик ребер
+    M--;
 
     cout << "done\n";
 
@@ -815,9 +742,9 @@ void Graph::transformToAdjList()
 
         adjList.clear();
 
-        for(size_t i=0; i<adjMatrix.size()-1; i++)
+        for(size_t i=0; i<adjMatrix.size(); i++)
         {
-            for(size_t j=i+1; j<adjMatrix[i].size(); j++)
+            for(size_t j=0; j<adjMatrix[i].size(); j++)
             {
                 if(adjMatrix[i][j] != 0)
                 {
@@ -830,7 +757,7 @@ void Graph::transformToAdjList()
     }
     else if(type == 'L')
     {
-        return;
+        cout << " adjacency list to adjcency list...\t";
     }
     else if(type == 'E')
     {
@@ -868,7 +795,7 @@ void Graph::transformToAdjMatrix()
     // Конвертировать в зависимости от типа
     if(type == 'C')
     {
-        return;
+        cout << " adjacency matrix to adjcency matrix...\t";
     }
     else if(type == 'L')
     {
@@ -892,11 +819,16 @@ void Graph::transformToAdjMatrix()
         cout << " edge list to adjcency matrix...\t";
 
         adjMatrix.clear();
-        adjMatrix.resize(edgList.size(), vector<int>(edgList.size(), 0));
+        adjMatrix.resize(N, vector<int>(N, 0));
 
         for(set< tuple< int, int, int > >::iterator it = edgList.begin(); it != edgList.end(); it++)
         {
             adjMatrix[get<0>(*it)][get<1>(*it)] = get<2>(*it);
+
+            if(!oriented)
+            {
+                adjMatrix[get<1>(*it)][get<0>(*it)] = get<2>(*it);
+            }
         }
 
         edgList.clear();
@@ -934,7 +866,23 @@ void Graph::transformToListOfEdges()
             {
                 if(adjMatrix[i][j] != 0)
                 {
-                    edgList.insert(make_tuple(i,j,adjMatrix[i][j]));
+                    set< tuple< int, int, int > >::iterator it =
+                        find_if(edgList.begin(), edgList.end(), [this,i,j](const tuple< int, int, int >& elem)
+                        {
+                            if(get<0>(elem) == i && get<1>(elem) == j) return true;
+
+                            if(!oriented)
+                            {
+                                if(get<0>(elem) == j || get<1>(elem) == i) return true;
+                            }
+
+                            return false;
+                        });
+
+                    if(it == edgList.end())
+                    {
+                        edgList.insert(make_tuple(i,j,adjMatrix[i][j]));
+                    }
                 }
             }
         }
@@ -959,7 +907,7 @@ void Graph::transformToListOfEdges()
     }
     else if(type == 'E')
     {
-        return;
+        cout << " edge list to edge list...\t";
     }
     else    // Если другой тип
     {
@@ -1103,12 +1051,15 @@ void Graph::writeGraph(string fileName)
     // Сохранить тип текущего представления
     file << type << " ";
 
-    // Сохранить количество вершин
-    file << adjMatrix.size() << " ";
-
     // Если текущее представление - матрица смежности
     if(type == 'C')
     {
+        // Сохранить количество вершин
+        file << adjMatrix.size() << "\n";
+
+        // Сохранить флаг ориентированности
+        file << oriented << " ";
+
         // Сохранить флаг взвешенности
         file << weighted << "\n";
 
@@ -1120,13 +1071,17 @@ void Graph::writeGraph(string fileName)
             {
                 // Сохранить текущий элемент
                 file << adjMatrix[i][j] << " ";
-            }
+            }            
+
             file << "\n";
         }
     }
     else    // Если текущее представление - список смежности
     if(type == 'L')
     {
+        // Сохранить количество вершин
+        file << N << "\n";
+
         // Сохранить флаг ориентированности графа
         file << oriented << " ";
 
@@ -1158,8 +1113,11 @@ void Graph::writeGraph(string fileName)
     else    // Если текущее представление - список ребер
     if(type == 'E')
     {
+        // Сохранить количество вершин
+        file << N << " ";
+
         // Сохранить количество ребер
-        file << edgList.size() << "\n";
+        file << M << "\n";
 
         // Сохранить флаг ориентированности графа
         file << oriented << " ";

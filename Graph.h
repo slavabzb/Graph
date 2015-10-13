@@ -60,6 +60,8 @@ private:
     char type;      // Тип текущего представления
     bool weighted;  // Флаг, true, если граф взвешенный, иначе false
     bool oriented;  // Флаг, true, если граф ориентированный, иначе false
+    int N;          // Количество вершин
+    int M;          // Количество ребер
 
     vector< vector< int > > adjMatrix;            // Матрица смежности
     map< int, set< pair< int, int > > > adjList;  // Список смежности
